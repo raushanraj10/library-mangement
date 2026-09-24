@@ -74,13 +74,6 @@ with a live `estimatedFine` - this is where a frontend would show the warning me
 | POST   | /api/user/return-request/{recordId}           | request to return a borrowed book             |
 | GET    | /api/user/my-books/{userId}                    | this user's borrow history ("My Borrowed Books" page) |
 
-## Notes on the "no. of books" requirement
-`totalCopies` (how many copies the library owns) is only surfaced through the **admin**
-endpoints (`/api/admin/books`, `/api/admin/books/stats`). The **user** endpoints
-(`/api/user/books`, etc.) return the same `Book` object but the frontend should only
-display `availableCopies` to users, not `totalCopies` - the field is still technically
-present in the JSON for simplicity (no separate DTOs), it's just not meant to be shown
-on the user-facing pages.
 
 ## Next step
 Frontend (React) will be added once you ask for it: a Login page, an Admin dashboard
