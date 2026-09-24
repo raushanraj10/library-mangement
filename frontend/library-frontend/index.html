@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Library Manager</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<style>
+  :root{
+    --ink:#1c2b2d;
+    --paper:#f6f4ee;
+    --line:#d8d3c4;
+    --teal:#2f6659;
+    --teal-dark:#1f473e;
+    --clay:#b5562f;
+    --muted:#6d675a;
+    --danger:#a33c3c;
+    --ok:#2f6659;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  header.top{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 28px;
+    background:var(--teal-dark);
+    color:#f6f4ee;
+  }
+  header.top h1{
+    font-size:18px; margin:0; font-weight:600; letter-spacing:.2px;
+  }
+  header.top .who{
+    display:flex; align-items:center; gap:14px; font-size:14px;
+  }
+  header.top button{
+    background:transparent; border:1px solid rgba(255,255,255,.5);
+    color:#f6f4ee; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:13px;
+  }
+  header.top button:hover{ background:rgba(255,255,255,.12); }
+
+  .shell{ max-width:1080px; margin:0 auto; padding:24px 20px 60px; }
+
+  .tabs{ display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:22px; flex-wrap:wrap; }
+  .tabs button{
+    background:none; border:none; padding:10px 16px; font-size:14px; cursor:pointer;
+    color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px;
+  }
+  .tabs button.active{ color:var(--teal-dark); border-bottom-color:var(--clay); font-weight:600; }
+
+  .card{
+    background:#fff; border:1px solid var(--line); border-radius:6px; padding:18px 20px; margin-bottom:16px;
+  }
+  .card h2{ margin:0 0 14px; font-size:16px; color:var(--teal-dark); }
+
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  th, td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th{ color:var(--muted); font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.03em; }
+  tr:last-child td{ border-bottom:none; }
+
+  input, select{
+    padding:8px 10px; border:1px solid var(--line); border-radius:4px; font-size:14px;
+    background:#fff; color:var(--ink);
+  }
+  input:focus, select:focus{ outline:2px solid var(--teal); outline-offset:1px; }
+
+  button.btn{
+    background:var(--teal); color:#fff; border:none; padding:8px 14px;
+    border-radius:4px; cursor:pointer; font-size:13.5px;
+  }
+  button.btn:hover{ background:var(--teal-dark); }
+  button.btn.secondary{ background:#fff; color:var(--teal-dark); border:1px solid var(--teal); }
+  button.btn.secondary:hover{ background:#eef4f2; }
+  button.btn.danger{ background:var(--danger); }
+  button.btn.danger:hover{ background:#832f2f; }
+  button.btn:disabled{ opacity:.45; cursor:not-allowed; }
+  button.btn.small{ padding:5px 10px; font-size:12.5px; }
+
+  .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .grid-form{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin-bottom:12px; }
+
+  .badge{
+    display:inline-block; padding:2px 8px; border-radius:20px; font-size:12px; font-weight:600;
+  }
+  .badge.pending{ background:#f4e3c8; color:#8a5a1c; }
+  .badge.borrowed{ background:#dfeae6; color:var(--teal-dark); }
+  .badge.returned{ background:#e5e5e0; color:var(--muted); }
+  .badge.rejected{ background:#f3dcdc; color:var(--danger); }
+  .badge.overdue{ background:#f3dcdc; color:var(--danger); }
+
+  .login-wrap{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--paper);
+  }
+  .login-box{
+    width:320px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:32px 28px;
+  }
+  .login-box h1{ font-size:19px; margin:0 0 4px; color:var(--teal-dark); }
+  .login-box p.sub{ margin:0 0 20px; color:var(--muted); font-size:13px; }
+  .login-box label{ display:block; font-size:12.5px; color:var(--muted); margin:12px 0 4px; }
+  .login-box input{ width:100%; }
+  .login-box button{ width:100%; margin-top:18px; padding:10px; }
+  .err{ color:var(--danger); font-size:13px; margin-top:10px; }
+  .hint{ margin-top:16px; font-size:12px; color:var(--muted); line-height:1.5; border-top:1px solid var(--line); padding-top:12px; }
+
+  .stat-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; }
+  .stat{ background:#fff; border:1px solid var(--line); border-radius:6px; padding:16px; }
+  .stat .n{ font-size:26px; font-weight:700; color:var(--teal-dark); }
+  .stat .l{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+
+  .empty{ color:var(--muted); font-size:13.5px; padding:10px 0; }
+  .conn-warn{
+    background:#f8e9d6; border:1px solid #e0bf8c; color:#7a4c14; padding:10px 14px;
+    border-radius:5px; font-size:13px; margin-bottom:16px;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback, useMemo } = React;
+
+const API_BASE = "http://localhost:8080/api";
+const SESSION_KEY = "library_session";     // cleared on logout
+const CACHE_KEY = "library_data_cache";    // NOT cleared on logout - kept around for next login
+
+// ---------- local cache helpers (kept in localStorage across logout) ----------
+function readCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+}
+function writeCache(patch) {
+  try {
+    const current = readCache();
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ...current, ...patch }));
+  } catch (e) { /* ignore quota errors */ }
+}
+
+// ---------- API helper ----------
+async function api(path, options) {
+  const res = await fetch(API_BASE + path, {
+    headers: { "Content-Type": "application/json" },
+    ...options,
+  });
+  if (!res.ok) {
+    let msg = `Request failed (${res.status})`;
+    try { const j = await res.json(); if (j && j.message) msg = j.message; } catch (e) {}
+    throw new Error(msg);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+function fmtDate(d) {
+  if (!d) return "—";
+  return String(d).replace("T", " ").slice(0, 16);
+}
+
+function StatusBadge({ status }) {
+  const map = {
+    PENDING_BORROW: ["pending", "Pending borrow"],
+    BORROWED: ["borrowed", "Borrowed"],
+    PENDING_RETURN: ["pending", "Pending return"],
+    RETURNED: ["returned", "Returned"],
+    REJECTED: ["rejected", "Rejected"],
+  };
+  const [cls, label] = map[status] || ["returned", status || "—"];
+  return <span className={"badge " + cls}>{label}</span>;
+}
+
+// =========================================================
+// LOGIN
+// =========================================================
+function Login({ onLogin }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setErr("");
+    setBusy(true);
+    try {
+      const user = await api("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ username, password }),
+      });
+      if (!user || !user.id) {
+        setErr("Invalid username or password.");
+      } else {
+        onLogin(user);
+      }
+    } catch (e) {
+      setErr("Could not reach the server. Is the backend running on localhost:8080?");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="login-wrap">
+      <div className="login-box">
+        <h1>Library Manager</h1>
+        <p className="sub">Sign in to continue</p>
+        <form onSubmit={submit}>
+          <label>Username</label>
+          <input value={username} onChange={e => setUsername(e.target.value)} autoFocus />
+          <label>Password</label>
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
+          <button className="btn" disabled={busy || !username || !password}>
+            {busy ? "Signing in…" : "Sign in"}
+          </button>
+          {err && <div className="err">{err}</div>}
+        </form>
+        <div className="hint">
+          Seed accounts — admin: <b>admin / admin123</b><br/>
+          user: <b>john / john123</b>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =========================================================
+// USER SIDE
+// =========================================================
+function BrowseBooks({ user, cache, setCache }) {
+  const [books, setBooks] = useState(cache.books || []);
+  const [subjects, setSubjects] = useState(cache.subjects || []);
+  const [keyword, setKeyword] = useState("");
+  const [subject, setSubject] = useState("");
+  const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      let data;
+      if (keyword.trim()) data = await api("/user/books/search?keyword=" + encodeURIComponent(keyword.trim()));
+      else if (subject) data = await api("/user/books/filter?subject=" + encodeURIComponent(subject));
+      else data = await api("/user/books");
+      setBooks(data || []);
+      setCache({ books: data || [] });
+    } catch (e) {
+      setMsg(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [keyword, subject, setCache]);
+
+  useEffect(() => {
+    api("/user/books/subjects").then(s => { setSubjects(s || []); setCache({ subjects: s || [] }); }).catch(() => {});
+    load();
+    // eslint-disable-next-line
+  }, []);
+
+  const borrow = async (bookId) => {
+    setMsg("");
+    try {
+      const result = await api(`/user/borrow-request/${bookId}/${user.id}`, { method: "POST" });
+      if (!result) {
+        setMsg("Couldn't submit the request — this book may have just run out of copies. Refreshing…");
+      } else {
+        setMsg("Borrow request submitted — waiting for admin approval.");
+      }
+      load();
+    } catch (e) {
+      setMsg(e.message);
+    }
+  };
+
+  return (
+    <div className="card">
+      <h2>Browse books</h2>
+      <div className="row" style={{ marginBottom: 14 }}>
+        <input placeholder="Search title or author…" value={keyword}
+          onChange={e => { setKeyword(e.target.value); setSubject(""); }}
+          onKeyDown={e => e.key === "Enter" && load()} />
+        <select value={subject} onChange={e => { setSubject(e.target.value); setKeyword(""); }}>
+          <option value="">All subjects</option>
+          {subjects.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <button className="btn secondary" onClick={load}>{loading ? "Loading…" : "Apply"}</button>
+        {(keyword || subject) &&
+          <button className="btn secondary" onClick={() => { setKeyword(""); setSubject(""); setTimeout(load, 0); }}>Clear</button>}
+      </div>
+      {msg && <div className="conn-warn">{msg}</div>}
+      {books.length === 0 ? <div className="empty">No books found.</div> : (
+        <table>
+          <thead><tr><th>Title</th><th>Author</th><th>Subject</th><th>Available</th><th></th></tr></thead>
+          <tbody>
+            {books.map(b => (
+              <tr key={b.id}>
+                <td>{b.title}</td>
+                <td>{b.author}</td>
+                <td>{b.subject}</td>
+                <td>{b.availableCopies}</td>
+                <td>
+                  <button className="btn small" disabled={b.availableCopies < 1} onClick={() => borrow(b.id)}>
+                    {b.availableCopies < 1 ? "Unavailable" : "Request borrow"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+function MyBooks({ user, cache, setCache }) {
+  const [records, setRecords] = useState(cache.myBooks || []);
+  const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api(`/user/my-books/${user.id}`);
+      setRecords(data || []);
+      setCache({ myBooks: data || [] });
+    } catch (e) {
+      setMsg(e.message);
+    } finally { setLoading(false); }
+  }, [user.id, setCache]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const requestReturn = async (recordId) => {
+    if (!window.confirm("Send a return request for this book to the admin?")) return;
+    setMsg("");
+    try {
+      const result = await api(`/user/return-request/${recordId}`, { method: "POST" });
+      if (!result) {
+        setMsg("Couldn't submit the return request — please refresh and try again.");
+      } else {
+        setMsg("Return request submitted — waiting for admin approval.");
+      }
+      load();
+    } catch (e) { setMsg(e.message); }
+  };
+
+  return (
+    <div className="card">
+      <h2>My books {loading && "· loading…"}</h2>
+      {msg && <div className="conn-warn">{msg}</div>}
+      {records.length === 0 ? <div className="empty">You haven't borrowed anything yet.</div> : (
+        <table>
+          <thead>
+            <tr><th>Title</th><th>Status</th><th>Due</th><th>Returned</th><th>Fine</th><th></th></tr>
+          </thead>
+          <tbody>
+            {records.map(r => (
+              <tr key={r.id}>
+                <td>{r.bookTitle}<br/><span style={{color:"var(--muted)", fontSize:12}}>{r.bookAuthor}</span></td>
+                <td>
+                  <StatusBadge status={r.status} />
+                  {r.overdue && <div><span className="badge overdue" style={{marginTop:4}}>Overdue</span></div>}
+                </td>
+                <td>{fmtDate(r.dueDate)}</td>
+                <td>{r.returnDate ? fmtDate(r.returnDate) + " (by admin)" : "—"}</td>
+                <td>
+                  {r.fine ? (
+                    <span style={{ color: "var(--danger)", fontWeight: 700 }}>${r.fine.toFixed(2)} <span style={{fontWeight:400, fontSize:11, color:"var(--muted)"}}>final</span></span>
+                  ) : r.estimatedFine ? (
+                    <span style={{ color: "var(--danger)", fontWeight: 700 }}>~${r.estimatedFine.toFixed(2)} <span style={{fontWeight:400, fontSize:11, color:"var(--muted)"}}>accruing</span></span>
+                  ) : "—"}
+                </td>
+                <td>
+                  {r.status === "BORROWED" &&
+                    <button className="btn small secondary" onClick={() => requestReturn(r.id)}>Request return</button>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 10 }}>
+        Fines accrue automatically at $10/day once a book passes its due date — the "accruing" amount
+        updates live every time this page loads. Once an admin approves your return, the "Returned" date
+        is stamped by the admin and the fine becomes final.
+      </p>
+    </div>
+  );
+}
+
+function UserApp({ user, cache, setCache }) {
+  const [tab, setTab] = useState("browse");
+  return (
+    <div className="shell">
+      <div className="tabs">
+        <button className={tab === "browse" ? "active" : ""} onClick={() => setTab("browse")}>Browse books</button>
+        <button className={tab === "mine" ? "active" : ""} onClick={() => setTab("mine")}>My books</button>
+      </div>
+      {tab === "browse" && <BrowseBooks user={user} cache={cache} setCache={setCache} />}
+      {tab === "mine" && <MyBooks user={user} cache={cache} setCache={setCache} />}
+    </div>
+  );
+}
+
+// =========================================================
+// ADMIN SIDE
+// =========================================================
+function AdminDashboard({ cache, setCache }) {
+  const [stats, setStats] = useState(cache.stats || null);
+  const [msg, setMsg] = useState("");
+  const load = useCallback(() => {
+    api("/admin/books/stats").then(s => { setStats(s); setCache({ stats: s }); }).catch(e => setMsg(e.message));
+  }, [setCache]);
+  useEffect(() => { load(); }, [load]);
+  return (
+    <div className="card">
+      <h2>Dashboard</h2>
+      {msg && <div className="conn-warn">{msg}</div>}
+      {stats ? (
+        <div className="stat-grid">
+          <div className="stat"><div className="n">{stats.totalTitles}</div><div className="l">Titles</div></div>
+          <div className="stat"><div className="n">{stats.totalCopies}</div><div className="l">Total copies</div></div>
+          <div className="stat"><div className="n">{stats.totalAvailable}</div><div className="l">Available</div></div>
+          <div className="stat"><div className="n">{stats.totalBorrowed}</div><div className="l">Borrowed</div></div>
+        </div>
+      ) : <div className="empty">Loading…</div>}
+    </div>
+  );
+}
+
+function AdminBooks({ cache, setCache }) {
+  const [books, setBooks] = useState(cache.adminBooks || []);
+  const [msg, setMsg] = useState("");
+  const [form, setForm] = useState({ title: "", author: "", subject: "", totalCopies: 1 });
+  const [editingId, setEditingId] = useState(null);
+
+  const load = useCallback(() => {
+    api("/admin/books").then(b => { setBooks(b || []); setCache({ adminBooks: b || [] }); }).catch(e => setMsg(e.message));
+  }, [setCache]);
+  useEffect(() => { load(); }, [load]);
+
+  const resetForm = () => { setForm({ title: "", author: "", subject: "", totalCopies: 1 }); setEditingId(null); };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setMsg("");
+    try {
+      const payload = { ...form, totalCopies: Number(form.totalCopies) };
+      if (editingId) {
+        const result = await api(`/admin/books/${editingId}`, { method: "PUT", body: JSON.stringify(payload) });
+        if (!result) { setMsg("Couldn't save — that book may have been deleted. Refreshing list."); load(); return; }
+      } else {
+        await api("/admin/books", { method: "POST", body: JSON.stringify(payload) });
+      }
+      resetForm();
+      load();
+    } catch (e) { setMsg(e.message); }
+  };
+
+  const edit = (b) => {
+    setEditingId(b.id);
+    setForm({ title: b.title, author: b.author, subject: b.subject, totalCopies: b.totalCopies });
+  };
+
+  const remove = async (id) => {
+    if (!window.confirm("Delete this book? This can't be undone.")) return;
+    setMsg("");
+    try { await api(`/admin/books/${id}`, { method: "DELETE" }); load(); }
+    catch (e) { setMsg(e.message); }
+  };
+
+  return (
+    <div className="card">
+      <h2>Manage books</h2>
+      {msg && <div className="conn-warn">{msg}</div>}
+      <form onSubmit={submit} className="grid-form">
+        <input placeholder="Title" required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
+        <input placeholder="Author" required value={form.author} onChange={e => setForm({ ...form, author: e.target.value })} />
+        <input placeholder="Subject" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} />
+        <input type="number" min="1" placeholder="Total copies" required value={form.totalCopies}
+          onChange={e => setForm({ ...form, totalCopies: e.target.value })} />
+        <div className="row">
+          <button className="btn">{editingId ? "Save changes" : "Add book"}</button>
+          {editingId && <button type="button" className="btn secondary" onClick={resetForm}>Cancel</button>}
+        </div>
+      </form>
+      {books.length === 0 ? <div className="empty">No books yet.</div> : (
+        <table>
+          <thead><tr><th>Title</th><th>Author</th><th>Subject</th><th>Total</th><th>Available</th><th></th></tr></thead>
+          <tbody>
+            {books.map(b => (
+              <tr key={b.id}>
+                <td>{b.title}</td><td>{b.author}</td><td>{b.subject}</td>
+                <td>{b.totalCopies}</td><td>{b.availableCopies}</td>
+                <td className="row">
+                  <button className="btn small secondary" onClick={() => edit(b)}>Edit</button>
+                  <button className="btn small danger" onClick={() => remove(b.id)}>Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+function AdminUsers({ currentUser, cache, setCache }) {
+  const [users, setUsers] = useState(cache.adminUsers || []);
+  const [msg, setMsg] = useState("");
+  const [form, setForm] = useState({ username: "", password: "", role: "USER" });
+
+  const load = useCallback(() => {
+    api("/admin/users").then(u => { setUsers(u || []); setCache({ adminUsers: u || [] }); }).catch(e => setMsg(e.message));
+  }, [setCache]);
+  useEffect(() => { load(); }, [load]);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setMsg("");
+    try {
+      await api("/admin/users", { method: "POST", body: JSON.stringify(form) });
+      setForm({ username: "", password: "", role: "USER" });
+      load();
+    } catch (e) { setMsg(e.message); }
+  };
+
+  const remove = async (id, username) => {
+    if (id === currentUser.id) {
+      setMsg("You can't delete the account you're currently signed in as.");
+      return;
+    }
+    if (!window.confirm(`Delete user "${username}"? This can't be undone.`)) return;
+    setMsg("");
+    try { await api(`/admin/users/${id}`, { method: "DELETE" }); load(); }
+    catch (e) { setMsg(e.message); }
+  };
+
+  return (
+    <div className="card">
+      <h2>Manage users</h2>
+      {msg && <div className="conn-warn">{msg}</div>}
+      <form onSubmit={submit} className="grid-form">
+        <input placeholder="Username" required value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} />
+        <input placeholder="Password" required value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
+        <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
+          <option value="USER">USER</option>
+          <option value="ADMIN">ADMIN</option>
+        </select>
+        <button className="btn">Add user</button>
+      </form>
+      {users.length === 0 ? <div className="empty">No users yet.</div> : (
+        <table>
+          <thead><tr><th>Username</th><th>Role</th><th></th></tr></thead>
+          <tbody>
+            {users.map(u => (
+              <tr key={u.id}>
+                <td>{u.username}{u.id === currentUser.id && <span style={{color:"var(--muted)", fontSize:12}}> (you)</span>}</td>
+                <td>{u.role}</td>
+                <td>
+                  <button className="btn small danger" disabled={u.id === currentUser.id} onClick={() => remove(u.id, u.username)}>Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+function AdminRequests({ cache, setCache }) {
+  const [requests, setRequests] = useState(cache.adminRequests || []);
+  const [msg, setMsg] = useState("");
+
+  const load = useCallback(() => {
+    api("/admin/requests").then(r => { setRequests(r || []); setCache({ adminRequests: r || [] }); }).catch(e => setMsg(e.message));
+  }, [setCache]);
+  useEffect(() => { load(); }, [load]);
+
+  const confirmLabels = {
+    "approve-borrow": "Approve this borrow request?",
+    "reject-borrow": "Reject this borrow request?",
+    "approve-return": "Approve this return? The return date and any fine will be recorded automatically.",
+    "reject-return": "Reject this return request? The book will stay marked as borrowed.",
+  };
+
+  const act = async (id, action) => {
+    if (!window.confirm(confirmLabels[action] || "Are you sure?")) return;
+    setMsg("");
+    try {
+      const result = await api(`/admin/requests/${id}/${action}`, { method: "PUT" });
+      if (!result) setMsg("That request could not be processed — it may already have been handled. Refreshing.");
+      load();
+    }
+    catch (e) { setMsg(e.message); }
+  };
+
+  return (
+    <div className="card">
+      <h2>Pending requests</h2>
+      {msg && <div className="conn-warn">{msg}</div>}
+      {requests.length === 0 ? <div className="empty">No pending requests.</div> : (
+        <table>
+          <thead><tr><th>User</th><th>Book</th><th>Status</th><th>Requested</th><th>Due / fine if returned now</th><th></th></tr></thead>
+          <tbody>
+            {requests.map(r => (
+              <tr key={r.id}>
+                <td>{r.username}</td>
+                <td>{r.bookTitle}</td>
+                <td>
+                  <StatusBadge status={r.status} />
+                  {r.overdue && <div><span className="badge overdue" style={{marginTop:4}}>Overdue</span></div>}
+                </td>
+                <td>{fmtDate(r.status === "PENDING_RETURN" ? r.returnRequestDate : r.requestDate)}</td>
+                <td>
+                  {r.status === "PENDING_RETURN" ? (
+                    <React.Fragment>
+                      Due {fmtDate(r.dueDate)}<br/>
+                      {r.estimatedFine ? (
+                        <span style={{ color: "var(--danger)", fontWeight: 700 }}>~${r.estimatedFine.toFixed(2)} fine</span>
+                      ) : <span style={{ color: "var(--muted)" }}>on time, no fine</span>}
+                    </React.Fragment>
+                  ) : "—"}
+                </td>
+                <td className="row">
+                  {r.status === "PENDING_BORROW" && <>
+                    <button className="btn small" onClick={() => act(r.id, "approve-borrow")}>Approve</button>
+                    <button className="btn small danger" onClick={() => act(r.id, "reject-borrow")}>Reject</button>
+                  </>}
+                  {r.status === "PENDING_RETURN" && <>
+                    <button className="btn small" onClick={() => act(r.id, "approve-return")}>Approve return</button>
+                    <button className="btn small danger" onClick={() => act(r.id, "reject-return")}>Reject return</button>
+                  </>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 10 }}>
+        Approving a return stamps today's date as the return date and locks in the final fine
+        (based on how late it is against the due date) automatically — nothing to enter by hand.
+      </p>
+    </div>
+  );
+}
+
+function AdminRecords({ cache, setCache }) {
+  const [records, setRecords] = useState(cache.adminRecords || []);
+  const [msg, setMsg] = useState("");
+  const load = useCallback(() => {
+    api("/admin/records").then(r => { setRecords(r || []); setCache({ adminRecords: r || [] }); }).catch(e => setMsg(e.message));
+  }, [setCache]);
+  useEffect(() => { load(); }, [load]);
+
+  return (
+    <div className="card">
+      <h2>All borrow records</h2>
+      {msg && <div className="conn-warn">{msg}</div>}
+      {records.length === 0 ? <div className="empty">No records yet.</div> : (
+        <table>
+          <thead><tr><th>User</th><th>Book</th><th>Status</th><th>Due</th><th>Returned</th><th>Fine</th></tr></thead>
+          <tbody>
+            {records.map(r => (
+              <tr key={r.id}>
+                <td>{r.username}</td>
+                <td>{r.bookTitle}</td>
+                <td>
+                  <StatusBadge status={r.status} />
+                  {r.overdue && <div><span className="badge overdue" style={{marginTop:4}}>Overdue</span></div>}
+                </td>
+                <td>{fmtDate(r.dueDate)}</td>
+                <td>{r.returnDate ? fmtDate(r.returnDate) : "—"}</td>
+                <td>
+                  {r.fine ? (
+                    <span style={{ color: "var(--danger)", fontWeight: 700 }}>${r.fine.toFixed(2)}</span>
+                  ) : r.estimatedFine ? (
+                    <span style={{ color: "var(--danger)", fontWeight: 700 }}>~${r.estimatedFine.toFixed(2)}</span>
+                  ) : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+function AdminApp({ user, cache, setCache }) {
+  const [tab, setTab] = useState("dashboard");
+  return (
+    <div className="shell">
+      <div className="tabs">
+        <button className={tab === "dashboard" ? "active" : ""} onClick={() => setTab("dashboard")}>Dashboard</button>
+        <button className={tab === "books" ? "active" : ""} onClick={() => setTab("books")}>Books</button>
+        <button className={tab === "users" ? "active" : ""} onClick={() => setTab("users")}>Users</button>
+        <button className={tab === "requests" ? "active" : ""} onClick={() => setTab("requests")}>Requests</button>
+        <button className={tab === "records" ? "active" : ""} onClick={() => setTab("records")}>All records</button>
+      </div>
+      {tab === "dashboard" && <AdminDashboard cache={cache} setCache={setCache} />}
+      {tab === "books" && <AdminBooks cache={cache} setCache={setCache} />}
+      {tab === "users" && <AdminUsers currentUser={user} cache={cache} setCache={setCache} />}
+      {tab === "requests" && <AdminRequests cache={cache} setCache={setCache} />}
+      {tab === "records" && <AdminRecords cache={cache} setCache={setCache} />}
+    </div>
+  );
+}
+
+// =========================================================
+// ROOT
+// =========================================================
+function App() {
+  const [user, setUser] = useState(() => {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  });
+  const [cache, setCacheState] = useState(readCache());
+
+  const setCache = useCallback((patch) => {
+    setCacheState(prev => ({ ...prev, ...patch }));
+    writeCache(patch);
+  }, []);
+
+  const handleLogin = (u) => {
+    setUser(u);
+    localStorage.setItem(SESSION_KEY, JSON.stringify(u));
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem(SESSION_KEY);
+    // Note: CACHE_KEY is deliberately left in localStorage so previously
+    // loaded books / requests / records are still there next time someone signs in.
+  };
+
+  if (!user) return <Login onLogin={handleLogin} />;
+
+  return (
+    <React.Fragment>
+      <header className="top">
+        <h1>Library Manager</h1>
+        <div className="who">
+          <span>{user.username} · {user.role}</span>
+          <button onClick={handleLogout}>Log out</button>
+        </div>
+      </header>
+      {user.role === "ADMIN"
+        ? <AdminApp user={user} cache={cache} setCache={setCache} />
+        : <UserApp user={user} cache={cache} setCache={setCache} />}
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
